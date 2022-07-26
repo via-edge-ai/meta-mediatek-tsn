@@ -1,0 +1,99 @@
+From 341422047f917e3ca74bccf4d84f535c0859673f Mon Sep 17 00:00:00 2001
+From: Biao Huang <biao.huang@mediatek.com>
+Date: Wed, 27 Jul 2022 15:33:31 +0800
+Subject: [PATCH 2/2] add support for taprio preemption
+
+This patch adds SH/SR parse for taprio preemption.
+
+Signed-off-by: Biao Huang <biao.huang@mediatek.com>
+---
+ src/qbv.c | 30 ++++++++++++++++++++++++++++--
+ src/qbv.h |  7 +++++++
+ 2 files changed, 35 insertions(+), 2 deletions(-)
+
+diff --git a/src/qbv.c b/src/qbv.c
+index 9a04081..e29066e 100644
+--- a/src/qbv.c
++++ b/src/qbv.c
+@@ -102,6 +102,7 @@ static int tsn_config_qbv_by_tc(sr_session_ctx_t *session, char *ifname,
+ 	int rc = SR_ERR_OK;
+ 	uint32_t gate_mask = 0;
+ 	char *host_name = NULL;
++	char *op_names = NULL;
+ 	uint32_t interval = 0;
+ 	uint64_t base_time = 0;
+ 	uint64_t cycle_time = 0;
+@@ -116,6 +117,8 @@ static int tsn_config_qbv_by_tc(sr_session_ctx_t *session, char *ifname,
+ 	host_name = get_host_name();
+ 	if (host_name && strcasestr(host_name, "IMX8MP"))
+ 		num_tc = 5;
++	else if (host_name && strcasestr(host_name, "i1200"))
++		num_tc = 4;
+ 
+ 	base_time = pqbv->admin.base_time;
+ 	cycle_time = pqbv->admin.cycle_time;
+@@ -164,11 +167,12 @@ static int tsn_config_qbv_by_tc(sr_session_ctx_t *session, char *ifname,
+ 	for (i = 0; i < pqbv->admin.control_list_length; i++) {
+ 		entry = pqbv->admin.control_list;
+ 
++		op_names = entry[i].op_names;
+ 		gate_mask = entry[i].gate_state;
+ 		interval = entry[i].time_interval;
+ 
+-		snprintf(stc_subcmd, MAX_CMD_LEN, "sched-entry S %X %d ",
+-				gate_mask, interval);
++		snprintf(stc_subcmd, MAX_CMD_LEN, "sched-entry %s %X %d ",
++			 op_names, gate_mask, interval);
+ 		strncat(stc_cmd, stc_subcmd, MAX_CMD_LEN - 1 - strlen(stc_cmd));
+ 	}
+ 
+@@ -338,6 +342,28 @@ int parse_qbv(sr_session_ctx_t *session, sr_val_t *value,
+ 		u32_val = value->data.uint32_val;
+ 		(entry + u64_val)->time_interval = u32_val;
+ 		valid = 1;
++	} else if (!strcmp(nodename, "operation-name")) {
++		sr_xpath_recover(&xp_ctx);
++		index = sr_xpath_key_value(value->xpath,
++					   "gate-control-entry",
++					   "index", &xp_ctx);
++		u64_val = strtoul(index, NULL, 0);
++
++		if (u64_val >= qbvconf->qbvconf_ptr->admin.control_list_length)
++			qbvconf->qbvconf_ptr->admin.control_list_length = u64_val + 1;
++
++		entry = qbvconf->qbvconf_ptr->admin.control_list;
++		if (strstr(value->data.string_val, "set-gate-states")) {
++			strncpy((entry + u64_val)->op_names, "S", strlen("S"));
++		} else if (strstr(value->data.string_val, "set-and-hold-mac")) {
++			strncpy((entry + u64_val)->op_names, "SH", strlen("SH"));
++		} else if (strstr(value->data.string_val, "set-and-release-mac")) {
++			strncpy((entry + u64_val)->op_names, "SR", strlen("SR"));
++		} else {
++			valid = -1;
++			goto out;
++		}
++		valid = 1;
+ 	} else if (!strcmp(nodename, "numerator")) {
+ 		qbvconf->cycletime.numerator = value->data.uint32_val;
+ 	} else if (!strcmp(nodename, "denominator")) {
+diff --git a/src/qbv.h b/src/qbv.h
+index 0c78759..825b37d 100644
+--- a/src/qbv.h
++++ b/src/qbv.h
+@@ -40,6 +40,13 @@
+ 
+ /* An entry for gate control list */
+ struct tsn_qbv_entry {
++	/* String represent the operation names for taprio
++	 * S means set-gate-states for Qbv
++	 * SH means set-and-hold-mac for Qbu
++	 * S means set-and-release-mac for Qbu
++	 */
++	char op_names[8];
++
+ 	/* Octet represent the gate states for the corresponding traffic
+ 	 * classes.
+ 	 * The MS bit corresponds to traffic class 7.
+-- 
+2.18.0
+

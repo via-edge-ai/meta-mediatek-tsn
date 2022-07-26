@@ -1,0 +1,357 @@
+From 3557471706be886efea7050c9deaa2c32a693276 Mon Sep 17 00:00:00 2001
+From: Biao Huang <biao.huang@mediatek.com>
+Date: Wed, 27 Jul 2022 15:25:48 +0800
+Subject: [PATCH 1/2] adapt real-time-edge-sysrepo to MTK platform
+
+This patch adapts real-time-edge-sysrepo to MTK platform,
+and only build files related to end-station.
+
+Signed-off-by: Biao Huang <biao.huang@mediatek.com>
+---
+ CMakeLists.txt |  14 -------
+ src/common.c   |   2 -
+ src/common.h   |   2 -
+ src/main.c     | 106 -------------------------------------------------
+ src/qbv.c      |   3 --
+ src/qbv.h      | 103 ++++++++++++++++++++++++++++++++++++++++++++++-
+ 6 files changed, 102 insertions(+), 128 deletions(-)
+
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -8,11 +8,6 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PAT
+ 
+ include_directories("${PROJECT_SOURCE_DIR}/inc")
+ 
+-# dependencies - libtsn
+-find_package(TSN REQUIRED)
+-include_directories(${TSN_INCLUDE_DIRS})
+-set(LIBS ${LIBS} ${TSN_LIBRARIES})
+-
+ # dependencies - cjson
+ find_package(CJSON REQUIRED)
+ include_directories(${CJSON_INCLUDE_DIRS})
+@@ -41,17 +36,7 @@ set(SOURCES
+ 		src/main.c
+ 		src/common.c
+ 		src/qbv.c
+-		src/qbu.c
+-		src/cb_streamid.c
+-		src/qci.c
+-		src/qci_sf.c
+-		src/qci_sg.c
+-		src/qci_fm.c
+-		src/brtc_cfg.c
+ 		src/ip_cfg.c
+-		src/mac_cfg.c
+-		src/cb.c
+-		src/vlan_cfg.c
+ 		src/file_mon.c)
+ 
+ find_package(PkgConfig)
+--- a/src/common.c
++++ b/src/common.c
+@@ -44,12 +44,10 @@ void destroy_tsn_mutex(void)
+ void init_tsn_socket(void)
+ {
+ 	pthread_mutex_lock(&tsn_mutex);
+-	genl_tsn_init();
+ }
+ 
+ void close_tsn_socket(void)
+ {
+-	genl_tsn_close();
+ 	pthread_mutex_unlock(&tsn_mutex);
+ }
+ 
+--- a/src/common.h
++++ b/src/common.h
+@@ -32,8 +32,6 @@
+ #include <sysrepo/plugins.h>
+ #include <sysrepo/trees.h>
+ #include "sysrepo/xpath.h"
+-#include <tsn/genl_tsn.h> /* must ensure no stdbool.h was included before */
+-#include <linux/tsn.h>
+ #include <errno.h>
+ 
+ #include <stdio.h>
+--- a/src/main.c
++++ b/src/main.c
+@@ -32,15 +32,9 @@
+ #include "common.h"
+ #include "main.h"
+ #include "qbv.h"
+-#include "qbu.h"
+ #include "file_mon.h"
+-#include "cb_streamid.h"
+-#include "qci.h"
+ #include "ip_cfg.h"
+-#include "vlan_cfg.h"
+ #include "mac_cfg.h"
+-#include "brtc_cfg.h"
+-#include "cb.h"
+ 
+ static uint8_t exit_application;
+ 
+@@ -149,10 +143,6 @@ int main(int argc, char **argv)
+ 	/* Init tsn mutex */
+ 	init_tsn_mutex();
+ 
+-#ifdef SYSREPO_TSN_TC
+-	qci_init_para();
+-#endif
+-
+ 	/* Connect to sysrepo */
+ 	rc = sr_connect("netconf-tsn", SR_CONN_DEFAULT, &connection);
+ 	if (rc != SR_ERR_OK) {
+@@ -206,30 +196,6 @@ int main(int argc, char **argv)
+ 		goto cleanup;
+ 	}
+ 
+-	/* Subscribe to QBU subtree */
+-	snprintf(path, XPATH_MAX_LEN, "%s", IF_XPATH);
+-	strncat(path, BR_PORT, XPATH_MAX_LEN - strlen(path));
+-	strncat(path, QBU_XPATH, XPATH_MAX_LEN - strlen(path));
+-	opts = SR_SUBSCR_DEFAULT | SR_SUBSCR_CTX_REUSE | SR_SUBSCR_EV_ENABLED;
+-	rc = sr_subtree_change_subscribe(session, path, qbu_subtree_change_cb,
+-					 NULL, 0, opts, &if_subscription);
+-	if (rc != SR_ERR_OK) {
+-		fprintf(stderr, "Error by sr_module_change_subscribe: %s\n",
+-			sr_strerror(rc));
+-		goto cleanup;
+-	}
+-
+-	/* Subscribe to CB */
+-	snprintf(path, XPATH_MAX_LEN, "%s", CB_XPATH);
+-	opts = SR_SUBSCR_DEFAULT | SR_SUBSCR_CTX_REUSE | SR_SUBSCR_EV_ENABLED;
+-	rc = sr_subtree_change_subscribe(session, path, cb_subtree_change_cb,
+-					 NULL, 0, opts, &if_subscription);
+-	if (rc != SR_ERR_OK) {
+-		fprintf(stderr, "Error subscribe cb_subtree_change_cb: %s\n",
+-			sr_strerror(rc));
+-		goto cleanup;
+-	}
+-
+ 	/* Subscribe to IP_CFG subtree */
+ 	snprintf(path, XPATH_MAX_LEN, "%s", IF_XPATH);
+ 	strncat(path, IPV4_XPATH, XPATH_MAX_LEN - 1 - strlen(path));
+@@ -241,89 +207,6 @@ int main(int argc, char **argv)
+ 			sr_strerror(rc));
+ 		goto cleanup;
+ 	}
+-
+-	/* Subscribe to ieee802-dot1q-bridge module */
+-	opts = SR_SUBSCR_APPLY_ONLY | SR_SUBSCR_DEFAULT | SR_SUBSCR_CTX_REUSE;
+-	rc = sr_module_change_subscribe(session, "ieee802-dot1q-bridge",
+-					module_change_cb, NULL, 0, opts,
+-					&bridge_subscription);
+-	if (rc != SR_ERR_OK) {
+-		fprintf(stderr, "Error by sr_module_change_subscribe: %s\n",
+-			sr_strerror(rc));
+-		goto cleanup;
+-	}
+-
+-	/* Subscribe to QCI-Stream-Filter subtree */
+-	snprintf(path, XPATH_MAX_LEN, "%s", BRIDGE_COMPONENT_XPATH);
+-	strncat(path, QCISF_XPATH, XPATH_MAX_LEN - strlen(path));
+-	opts = SR_SUBSCR_DEFAULT | SR_SUBSCR_CTX_REUSE | SR_SUBSCR_EV_ENABLED;
+-	rc = sr_subtree_change_subscribe(session, path,
+-					 qci_sf_subtree_change_cb,
+-					 NULL, 0, opts, &bridge_subscription);
+-
+-	/* Subscribe to QCI-Stream-Gate subtree */
+-	snprintf(path, XPATH_MAX_LEN, "%s", BRIDGE_COMPONENT_XPATH);
+-	strncat(path, QCISG_XPATH, XPATH_MAX_LEN - strlen(path));
+-	opts = SR_SUBSCR_DEFAULT | SR_SUBSCR_CTX_REUSE | SR_SUBSCR_EV_ENABLED;
+-	rc = sr_subtree_change_subscribe(session, path,
+-					 qci_sg_subtree_change_cb,
+-					 NULL, 0, opts, &bridge_subscription);
+-
+-	/* Subscribe to QCI-Flow-Meter subtree */
+-	snprintf(path, XPATH_MAX_LEN, "%s", BRIDGE_COMPONENT_XPATH);
+-	strncat(path, QCIFM_XPATH, XPATH_MAX_LEN - strlen(path));
+-	opts = SR_SUBSCR_DEFAULT | SR_SUBSCR_CTX_REUSE | SR_SUBSCR_EV_ENABLED;
+-	rc = sr_subtree_change_subscribe(session, path,
+-					 qci_fm_subtree_change_cb,
+-					 NULL, 0, opts, &bridge_subscription);
+-
+-	/* Subscribe to CB-StreamID subtree */
+-	snprintf(path, XPATH_MAX_LEN, "%s", CB_STREAMID_XPATH);
+-	opts = SR_SUBSCR_DEFAULT | SR_SUBSCR_CTX_REUSE | SR_SUBSCR_EV_ENABLED;
+-	rc = sr_subtree_change_subscribe(session, path,
+-					 cb_streamid_subtree_change_cb,
+-					 NULL, 0, opts, &bridge_subscription);
+-
+-	if (rc != SR_ERR_OK) {
+-		fprintf(stderr, "Error by sr_module_change_subscribe: %s\n",
+-			sr_strerror(rc));
+-		goto cleanup;
+-	}
+-
+-	/* Subscribe to VLAN_CFG subtree */
+-	snprintf(path, XPATH_MAX_LEN, "%s", BRIDGE_COMPONENT_XPATH);
+-	strncat(path, BR_VLAN_XPATH, XPATH_MAX_LEN - 1 - strlen(path));
+-	opts = SR_SUBSCR_DEFAULT | SR_SUBSCR_CTX_REUSE | SR_SUBSCR_EV_ENABLED;
+-	rc = sr_subtree_change_subscribe(session, path, vlan_subtree_change_cb,
+-					NULL, 0, opts, &bridge_subscription);
+-	if (rc != SR_ERR_OK) {
+-		fprintf(stderr, "Error subscribe vlan_subtree_change_cb: %s\n",
+-			sr_strerror(rc));
+-		goto cleanup;
+-	}
+-
+-	/* Subscribe to MAC_CFG subtree */
+-	snprintf(path, XPATH_MAX_LEN, "%s", BRIDGE_ADDR_XPATH);
+-	opts = SR_SUBSCR_DEFAULT | SR_SUBSCR_CTX_REUSE | SR_SUBSCR_EV_ENABLED;
+-	rc = sr_subtree_change_subscribe(session, path, mac_subtree_change_cb,
+-					NULL, 0, opts, &bridge_subscription);
+-	if (rc != SR_ERR_OK) {
+-		fprintf(stderr, "Error subscribe mac_subtree_change_cb: %s\n",
+-			sr_strerror(rc));
+-		goto cleanup;
+-	}
+-
+-	/* Subscribe to BR_TC_CFG subtree */
+-	snprintf(path, XPATH_MAX_LEN, "%s", BRIDGE_COMPONENT_XPATH);
+-	strncat(path, BR_TC_XPATH, XPATH_MAX_LEN - 1 - strlen(path));
+-	opts = SR_SUBSCR_DEFAULT | SR_SUBSCR_CTX_REUSE | SR_SUBSCR_EV_ENABLED;
+-	rc = sr_subtree_change_subscribe(session, path, brtc_subtree_change_cb,
+-					NULL, 0, opts, &bridge_subscription);
+-	if (rc != SR_ERR_OK) {
+-		fprintf(stderr, "Error subscribe brtc_subtree_change_cb: %s\n",
+-			sr_strerror(rc));
+-		goto cleanup;
+-	}
+ 
+ 	/* Loop until ctrl-c is pressed / SIGINT is received */
+ 	signal(SIGINT, sigint_handler);
+--- a/src/qbv.c
++++ b/src/qbv.c
+@@ -209,9 +209,6 @@ int tsn_config_qbv(sr_session_ctx_t *ses
+ 			rc = tsn_config_qbv_by_tc(session, ifname, qbvconf);
+ 		else
+ 			rc = tsn_config_del_qbv_by_tc(qbvconf, ifname);
+-	} else {
+-		rc = tsn_qos_port_qbv_set(ifname, qbvconf->qbvconf_ptr,
+-				  qbvconf->qbv_en);
+ 	}
+ 
+ 	if (rc < 0) {
+--- a/src/qbv.h
++++ b/src/qbv.h
+@@ -21,7 +21,6 @@
+ #ifndef __QBV_H_
+ #define __QBV_H_
+ 
+-#include <tsn/genl_tsn.h>
+ #include "common.h"
+ 
+ #define QBV_TC_NUM (8)
+@@ -30,6 +29,108 @@
+ #define QBV_MAX_SDU_XPATH "/ieee802-dot1q-sched:gate-parameter-table/queue-max-sdu-table"
+ #define QBV_MODULE_NAME "ieee802-dot1q-sched"
+ 
++#define MAX_USER_SIZE 0
++#define MAX_ATTR_SIZE 3072
++#define MAX_TOTAL_MSG_SIZE  (MAX_USER_SIZE + MAX_ATTR_SIZE)
++#define MAX_ENTRY_SIZE 2048
++#define MAX_ENTRY_NUMBER 128
++#define MAX_IFNAME_COUNT 64
++#define NUM_MSCC_QOS_PRIO 8
++#define MSCC_QOS_PRIO_MAX (NUM_MSCC_QOS_PRIO - 1)
++
++/* An entry for gate control list */
++struct tsn_qbv_entry {
++	/* Octet represent the gate states for the corresponding traffic
++	 * classes.
++	 * The MS bit corresponds to traffic class 7.
++	 * The LS bit to traffic class 0.
++	 * A bit value of 0 indicates closed;
++	 * A bit value of 1 indicates open.
++	 */
++	uint8_t gate_state;
++
++	/* A TimeInterval is encoded in 4 octets as a 32-bit unsigned integer,
++	 * representing a number of nanoseconds.
++	 */
++	uint32_t time_interval;
++};
++
++/* The administrative/operation time and gate list */
++struct tsn_qbv_basic {
++	/* The administrative/operation value of the GateStates parameter for
++	 * the Port.
++	 * The bits of the octet represent the gate states for the
++	 * corresponding traffic classes; the MS bit corresponds to traffic
++	 * class 7, the LS bit to traffic class 0. A bit value of 0 indicates
++	 * closed; a bit value of 1 indicates open.
++	 * The value of this object MUST be retained
++	 * across reinitializations of the management system.
++	 */
++	uint8_t gate_states;
++
++	/* The administrative/operation value of the ListMax parameter for the
++	 * port. The integer value indicates the number of entries (TLVs) in
++	 * the AdminControlList. The value of this object MUST be retained
++	 * across reinitializations of the management system.
++	 */
++	uint32_t control_list_length;
++
++	/* The administrative/operation value of the AdminCycleTime
++	 * parameter for the Port. The numerator and denominator together
++	 * represent the cycle time as a rational number of seconds.  The value
++	 * of this object MUST be retained across reinitializations of the
++	 * management system.
++	 */
++	uint32_t cycle_time;
++
++	/* The administrative/operation value of the CycleTimeExtension
++	 * parameter for the Port. The value is an unsigned integer number of
++	 * nanoseconds.
++	 * The value of this object MUST be retained across reinitializations
++	 * of the management system.
++	 */
++
++	uint32_t cycle_time_extension;
++
++	/* The administrative/operation value of the BaseTime parameter for the
++	 * Port.  The value is a representation of a PTPtime value, consisting
++	 * of a 48-bit integer number of seconds and a 32-bit integer number of
++	 * nanoseconds.
++	 * The value of this object MUST be retained across reinitializations of
++	 * the management system.
++	 */
++	uint64_t base_time;
++
++	/* admin_control_list represent the AdminControlList/OperControlList.
++	 * The administrative version of the gate control list for the Port.
++	 */
++	struct tsn_qbv_entry *control_list;
++};
++
++struct tsn_qbv_conf {
++	/* The GateEnabled parameter determines whether traffic scheduling is
++	 * active (true) or inactive (false).  The value of this object MUST be
++	 * retained across reinitializations of the management system.
++	 */
++	bool gate_enabled;
++
++	/* The maxsdu parameter denoting the maximum SDU size supported by the
++	 * queue.
++	 */
++	uint32_t maxsdu;
++
++	/* The ConfigChange parameter signals the start of a configuration
++	 * change when it is set to TRUE. This should only be done when the
++	 * various administrative parameters are all set to appropriate values.
++	 */
++	bool config_change;
++
++	/* The admin parameter signals the admin relate cycletime, basictime,
++	 * gatelist paraters.
++	 */
++	struct tsn_qbv_basic admin;
++};
++
+ struct sr_qbv_conf {
+ 	bool qbv_en;
+ 	struct tsn_qbv_conf *qbvconf_ptr;
