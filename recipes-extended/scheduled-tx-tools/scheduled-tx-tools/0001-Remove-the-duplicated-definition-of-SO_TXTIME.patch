@@ -1,0 +1,73 @@
+From 0110126bef1597c2299c0723753694c717ada760 Mon Sep 17 00:00:00 2001
+From: Biao Huang <biao.huang@mediatek.com>
+Date: Mon, 20 Jun 2022 10:33:24 +0800
+Subject: [PATCH 1/4] Remove the duplicated definition of SO_TXTIME
+
+Remove the duplicated definition of SO_TXTIME, since they are provided
+by uapi/linux/net_tstamp.h.
+---
+ l2_tai.c  | 18 ------------------
+ udp_tai.c | 18 ------------------
+ 2 files changed, 36 deletions(-)
+
+diff --git a/l2_tai.c b/l2_tai.c
+index 0ef20db..b175d0c 100644
+--- a/l2_tai.c
++++ b/l2_tai.c
+@@ -62,24 +62,6 @@
+ #define pr_err(s)	fprintf(stderr, s "\n")
+ #define pr_info(s)	fprintf(stdout, s "\n")
+ 
+-/* The API for SO_TXTIME is the below struct and enum, which will be
+- * provided by uapi/linux/net_tstamp.h in the near future.
+- */
+-struct sock_txtime {
+-	clockid_t clockid;
+-	uint16_t flags;
+-};
+-
+-enum txtime_flags {
+-	SOF_TXTIME_DEADLINE_MODE = (1 << 0),
+-	SOF_TXTIME_REPORT_ERRORS = (1 << 1),
+-
+-	SOF_TXTIME_FLAGS_LAST = SOF_TXTIME_REPORT_ERRORS,
+-	SOF_TXTIME_FLAGS_MASK = (SOF_TXTIME_FLAGS_LAST - 1) |
+-				 SOF_TXTIME_FLAGS_LAST
+-};
+-
+-
+ static int running = 1, use_so_txtime = 1;
+ static int period_nsec = DEFAULT_PERIOD;
+ static int waketx_delay = DEFAULT_DELAY;
+diff --git a/udp_tai.c b/udp_tai.c
+index dbf288c..9fcec5a 100644
+--- a/udp_tai.c
++++ b/udp_tai.c
+@@ -70,24 +70,6 @@
+ #define pr_err(s)	fprintf(stderr, s "\n")
+ #define pr_info(s)	fprintf(stdout, s "\n")
+ 
+-/* The API for SO_TXTIME is the below struct and enum, which will be
+- * provided by uapi/linux/net_tstamp.h in the near future.
+- */
+-struct sock_txtime {
+-	clockid_t clockid;
+-	uint16_t flags;
+-};
+-
+-enum txtime_flags {
+-	SOF_TXTIME_DEADLINE_MODE = (1 << 0),
+-	SOF_TXTIME_REPORT_ERRORS = (1 << 1),
+-
+-	SOF_TXTIME_FLAGS_LAST = SOF_TXTIME_REPORT_ERRORS,
+-	SOF_TXTIME_FLAGS_MASK = (SOF_TXTIME_FLAGS_LAST - 1) |
+-				 SOF_TXTIME_FLAGS_LAST
+-};
+-
+-
+ static int running = 1, use_so_txtime = 1;
+ static int period_nsec = DEFAULT_PERIOD;
+ static int waketx_delay = DEFAULT_DELAY;
+-- 
+2.18.0
+

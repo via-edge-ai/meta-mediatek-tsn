@@ -1,0 +1,26 @@
+From f9d8a955908cc0644d744d8de654124561352f0b Mon Sep 17 00:00:00 2001
+From: Biao Huang <biao.huang@mediatek.com>
+Date: Mon, 20 Jun 2022 14:47:33 +0800
+Subject: [PATCH 1/2] redefine NSEC_TO_SEC to avoid inaccurate transform in
+ tv_to_nanos()
+
+---
+ dump-classifier.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/dump-classifier.c b/dump-classifier.c
+index fe595ff..5813367 100644
+--- a/dump-classifier.c
++++ b/dump-classifier.c
+@@ -14,7 +14,7 @@
+ #include <stdlib.h>
+ #include <string.h>
+ 
+-#define NSEC_TO_SEC 1e9
++#define NSEC_TO_SEC 1000000000
+ 
+ #define NUM_FILTERS 8
+ #define NUM_ENTRIES 64
+-- 
+2.18.0
+

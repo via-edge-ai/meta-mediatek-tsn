@@ -1,0 +1,43 @@
+From 43103fb7a1b9ef19f8f4086f9cc47b6e12183d9c Mon Sep 17 00:00:00 2001
+From: Biao Huang <biao.huang@mediatek.com>
+Date: Mon, 20 Jun 2022 13:55:49 +0800
+Subject: [PATCH 4/4] add adjust_clock_tai_offset
+
+---
+ adjust_clock_tai_offset.c | 24 ++++++++++++++++++++++++
+ 1 file changed, 24 insertions(+)
+ create mode 100644 adjust_clock_tai_offset.c
+
+diff --git a/adjust_clock_tai_offset.c b/adjust_clock_tai_offset.c
+new file mode 100644
+index 0000000..ab76b86
+--- /dev/null
++++ b/adjust_clock_tai_offset.c
+@@ -0,0 +1,24 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Copyright (c) 2022 MediaTek Inc.
++ */
++#include <stdio.h>
++#include <stdlib.h>
++#include <sys/timex.h>
++
++#define TAI_OFFSET	37
++
++int main(void)
++{
++	struct timex timex = {
++		.modes		= ADJ_TAI,
++		.constant	= TAI_OFFSET
++	};
++
++	if (adjtimex(&timex) == -1) {
++		perror("adjtimex failed to set CLOCK_TAI offset");
++		return EXIT_FAILURE;
++	}
++
++	return EXIT_SUCCESS;
++}
+-- 
+2.18.0
+

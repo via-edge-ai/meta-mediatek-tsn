@@ -1,0 +1,3 @@
+talker_strict :: udp port 7788
+talker_deadline :: udp port 7789
+talker_na :: udp port 0000

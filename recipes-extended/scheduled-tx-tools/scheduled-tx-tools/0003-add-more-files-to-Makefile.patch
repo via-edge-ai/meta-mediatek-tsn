@@ -1,0 +1,41 @@
+From cc2ce457971d60032a2fc43273e2f00387fc5954 Mon Sep 17 00:00:00 2001
+From: Biao Huang <biao.huang@mediatek.com>
+Date: Mon, 20 Jun 2022 13:55:28 +0800
+Subject: [PATCH 3/4] add more files to Makefile
+
+---
+ Makefile | 10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
+
+diff --git a/Makefile b/Makefile
+index 5e1e654..f5139a3 100644
+--- a/Makefile
++++ b/Makefile
+@@ -1,6 +1,6 @@
+ LIBS = -lpcap
+ 
+-all: dump-classifier udp_tai
++all: dump-classifier udp_tai adjust_clock_tai_offset check_clocks
+ 
+ dump-classifier: dump-classifier.c
+ 	${CC} ${CFLAGS} -o $@ $< ${LIBS}
+@@ -8,8 +8,16 @@ dump-classifier: dump-classifier.c
+ udp_tai: udp_tai.c
+ 	${CC} ${CFLAGS} -lpthread -o $@ $<
+ 
++adjust_clock_tai_offset:  adjust_clock_tai_offset.c
++	${CC} ${CFLAGS} -o $@ $<
++
++check_clocks:  check_clocks.c
++	${CC} ${CFLAGS} -o $@ $<
++
+ clean:
+ 	@rm dump-classifier
+ 	@rm udp_tai
++	@rm adjust_clock_tai_offset
++	@rm check_clocks
+ 
+ .PHONY: clean debug
+-- 
+2.18.0
+

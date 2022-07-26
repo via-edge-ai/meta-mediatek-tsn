@@ -1,0 +1,28 @@
+From 58940e9894382381642fa0a0901a4c103f4ca657 Mon Sep 17 00:00:00 2001
+From: Biao Huang <biao.huang@mediatek.com>
+Date: Mon, 20 Jun 2022 10:40:13 +0800
+Subject: [PATCH 2/4] modify pcap library
+
+---
+ Makefile | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/Makefile b/Makefile
+index a5dad13..5e1e654 100644
+--- a/Makefile
++++ b/Makefile
+@@ -1,9 +1,9 @@
+-PCAP_CFLAGS=$(shell pcap-config --cflags --libs)
++LIBS = -lpcap
+ 
+ all: dump-classifier udp_tai
+ 
+ dump-classifier: dump-classifier.c
+-	${CC} ${CFLAGS} $(PCAP_CFLAGS) -o $@ $<
++	${CC} ${CFLAGS} -o $@ $< ${LIBS}
+ 
+ udp_tai: udp_tai.c
+ 	${CC} ${CFLAGS} -lpthread -o $@ $<
+-- 
+2.18.0
+
