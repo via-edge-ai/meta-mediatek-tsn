@@ -8,10 +8,6 @@ local_path=$(dirname $0)
 
 echo 830 > /proc/sys/net/ipv4/ip_unprivileged_port_start
 
-if [ -f "/etc/Netopeer2/init.stamp" ]; then
-	exit 0
-fi
-
 echo "configure sysrepo and netopeer2 ..."
 
 cd /etc/Netopeer2/scripts
@@ -23,5 +19,4 @@ cd /etc/Netopeer2/scripts
 cd /etc/sysrepo-tsn/scripts
 ./model-install.sh >/dev/null 2>&1
 
-touch "/etc/Netopeer2/init.stamp"
 echo "configure sysrepo and netopeer2 OK"
