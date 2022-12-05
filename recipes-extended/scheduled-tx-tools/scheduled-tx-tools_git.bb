@@ -36,6 +36,8 @@ do_install() {
 	install -m 0755 ${S}/adjust_clock_tai_offset ${D}${bindir}/
 	install -m 0755 ${S}/check_clocks ${D}${bindir}/
 	install -m 0755 ${S}/dump-classifier ${D}${bindir}/
+	install -m 0755 ${S}/tsn_talker ${D}${bindir}/
+	install -m 0755 ${S}/tsn_listener ${D}${bindir}/
 
 	install -d ${D}/etc/tsn-scripts/
 	cp ${WORKDIR}/config-etf-offload.sh ${D}/etc/tsn-scripts/
