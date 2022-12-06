@@ -17,6 +17,7 @@ SRC_URI = "\
 	file://config-fpe.sh \
 	file://run-udp-tai-tc-etf.sh \
 	file://run-udp-tai-tc-taprio.sh \
+	file://base-time.sh \
 	file://filter \
 "
 
@@ -45,6 +46,7 @@ do_install() {
 	cp ${WORKDIR}/config-fpe.sh ${D}/etc/tsn-scripts/
 	cp ${WORKDIR}/run-udp-tai-tc-etf.sh ${D}/etc/tsn-scripts/
 	cp ${WORKDIR}/run-udp-tai-tc-taprio.sh ${D}/etc/tsn-scripts/
+	cp ${WORKDIR}/base-time.sh ${D}/etc/tsn-scripts/
 	cp ${WORKDIR}/filter ${D}/etc/tsn-scripts/
 	cp ${S}/txtime_offset_stats.py ${D}/etc/tsn-scripts/
 }
