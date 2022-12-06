@@ -1,0 +1,26 @@
+From b10d505c59f9dcd40e7033128d40b695035f736f Mon Sep 17 00:00:00 2001
+From: Jianguo Zhang <jianguo.zhang@mediatek.com>
+Date: Mon, 5 Dec 2022 17:39:05 +0800
+Subject: [PATCH] add support for genio-700 platform
+
+Signed-off-by: Jianguo Zhang <jianguo.zhang@mediatek.com>
+---
+ src/qbv.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/src/qbv.c b/src/qbv.c
+index e29066e..a23ab3d 100644
+--- a/src/qbv.c
++++ b/src/qbv.c
+@@ -119,6 +119,8 @@ static int tsn_config_qbv_by_tc(sr_session_ctx_t *session, char *ifname,
+ 		num_tc = 5;
+ 	else if (host_name && strcasestr(host_name, "i1200"))
+ 		num_tc = 4;
++	else if (host_name && strcasestr(host_name, "genio-700"))
++		num_tc = 4;
+ 
+ 	base_time = pqbv->admin.base_time;
+ 	cycle_time = pqbv->admin.cycle_time;
+-- 
+2.18.0
+

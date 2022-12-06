@@ -6,6 +6,7 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=86d3f3a95c324c9479bd8986968f4327"
 SRC_URI = "git://github.com/real-time-edge-sw/real-time-edge-sysrepo.git;protocol=https;nobranch=1 \
            file://0001-adapt-real-time-edge-sysrepo-to-MTK-platform.patch \
            file://0002-add-support-for-taprio-preemption.patch \
+           file://0003-add-support-for-genio-700-platform.patch \
            file://sysrepo-tsnd \
            file://sysrepo-init \
            file://sysrepo-tsn.service \
