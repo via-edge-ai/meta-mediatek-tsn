@@ -7,6 +7,7 @@ SRC_URI = "git://github.com/real-time-edge-sw/real-time-edge-sysrepo.git;protoco
            file://0001-adapt-real-time-edge-sysrepo-to-MTK-platform.patch \
            file://0002-add-support-for-taprio-preemption.patch \
            file://0003-add-support-for-genio-700-platform.patch \
+           file://0004-add-support-for-MTK-platform.patch \
            file://sysrepo-tsnd \
            file://sysrepo-init \
            file://sysrepo-tsn.service \

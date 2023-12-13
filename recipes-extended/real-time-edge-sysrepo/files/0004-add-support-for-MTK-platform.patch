@@ -1,0 +1,28 @@
+From 52e86d3e081e9adaba2ae0c79bb18cd7b59be895 Mon Sep 17 00:00:00 2001
+From: fanyi zhang <fanyi.zhang@mediatek.com>
+Date: Wed, 13 Dec 2023 17:25:06 +0800
+Subject: [PATCH] add support for MTK platform
+
+Signed-off-by: fanyi zhang <fanyi.zhang@mediatek.com>
+---
+ src/qbv.c | 4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
+
+diff --git a/src/qbv.c b/src/qbv.c
+index a23ab3d..aef25e0 100644
+--- a/src/qbv.c
++++ b/src/qbv.c
+@@ -117,9 +117,7 @@ static int tsn_config_qbv_by_tc(sr_session_ctx_t *session, char *ifname,
+ 	host_name = get_host_name();
+ 	if (host_name && strcasestr(host_name, "IMX8MP"))
+ 		num_tc = 5;
+-	else if (host_name && strcasestr(host_name, "i1200"))
+-		num_tc = 4;
+-	else if (host_name && strcasestr(host_name, "genio-700"))
++	else
+ 		num_tc = 4;
+ 
+ 	base_time = pqbv->admin.base_time;
+-- 
+2.18.0
+
